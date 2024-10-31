@@ -41,7 +41,7 @@ export PATH=\$PATH:$KAFKA_HOME/bin
 </br>
 
 3. Create a topic (open another terminal):
-- `$KAFKA_HOME/bin/kafka-topics.sh --create --topic vendas --bootstrap-server localhost:9092 --partitions 1 --rplication-factor 1`
+- `$KAFKA_HOME/bin/kafka-topics.sh --create --topic vendas --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1`
 - *ps: my topic name is **vendas**, if you change it, be sure to change all the "vendas" on the code to your new topic's name*
 </br>
 
