@@ -6,6 +6,8 @@ spark = SparkSession\
     .builder\
     .appName("Kafka_Consumer")\
     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3")\
+    .config("spark.cassandra.connection.host", "127.0.0.1") \
+    .config("spark.cassandra.connection.port", "9042") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
@@ -47,25 +49,23 @@ df_orders_exploded = df_orders.withColumn("product", explode("products")).select
     col("product.unit_price").alias("unit_price")
 )
 
-df_result = df_orders_exploded.withColumn(
-    "purchase_summary",
-    concat(
-        lit("Total da compra de "),
-        col("client_first_name"),
-        lit(" "),
-        col("client_last_name"),
-        lit(": R$ "),
-        col("order_total"),
-        lit(" reais")
-    )
-).dropDuplicates(["purchase_summary"])
-
-
 def process_batch(df, epoch_id):
-    for row in df.select("purchase_summary").collect():
-        print(row["purchase_summary"])
+     df.select(
+        col("order_id"),
+        col("client_first_name"),
+        col("client_last_name"),
+        col("product"),
+        col("quantity"),
+        col("unit_price"),
+        col("order_total"),
+        col("order_date_time")
+    ).write \
+     .format("org.apache.spark.sql.cassandra") \
+     .options(table="orders", keyspace="vendas_keyspace") \
+     .mode("append") \
+     .save()
 
 
-query = df_result.writeStream.foreachBatch(process_batch).start()
+query = df_orders_exploded.writeStream.foreachBatch(process_batch).start()
 
 query.awaitTermination()
